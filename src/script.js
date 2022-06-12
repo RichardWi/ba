@@ -36,7 +36,13 @@ scene.background = new THREE.Color(0xffffff)
 
 //Setup Camera
 // inputs: (fov, aspect, near, far)
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+const camera = new THREE.PerspectiveCamera(75, util.width / util.height, 0.1, 1000)
+
+//Setup light source
+// inputs: (color, intensity) (0x is hexadecimal) (0xffffff is white)
+const light = new THREE.AmbientLight(0xffffff)
+
+scene.add(light)
 
 // runtime Function getting called each frame
 function runtime() {
