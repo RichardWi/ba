@@ -43,10 +43,10 @@ scene.add(light)
 //Setup Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, //point to canvas
-  antialias: true, //antialiasing
+  antialias: false, //antialiasing
 })
 renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(2)
+renderer.setPixelRatio(1)
 
 /*
 //Setup VR
@@ -67,12 +67,14 @@ var orbitcontrols = true
 const loader = new GLTFLoader()
 var Schlag = new THREE.Object3D()
 loader.load(
-  '/models/schlag/seusslitz_ownCoordinates_texture-jpeg_raster-indexValues_medium (1).glb',
+  '/models/schlag/Schlag.glb',
   function (gltf) {
     Schlag = gltf.scene.clone()
 
     const TXT = gltf.scene.children[0].material.map
     const modelMaterial = Schlag.children[0].material
+    //normals and uvs not needed for rendering
+    //delete Schlag.children[0].geometry.attributes.uv
     console.log(Schlag)
     scene.add(Schlag)
 
@@ -92,7 +94,7 @@ function addShader(Schlag, TXT, modelMaterial) {
   const texture = new THREE.TextureLoader().load('/models/textures/white/weiss.png')
   console.log(texture)
 
-  Schlag.children[0].material.vertexColors = THREE.VertexColors
+  //Schlag.children[0].material.vertexColors = THREE.VertexColors
 
   const uColor = new Float32Array(Schlag.children[0].geometry.attributes.color.data.array)
   for (let i = 0; i < Schlag.children[0].geometry.attributes.color.data.array.length * 4; i += 4) {
