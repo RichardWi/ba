@@ -153,6 +153,7 @@ function addShader(Schlag, TXT, modelMaterial) {
         currentMateriel = material
       }
       Schlag.children[0].material = currentMateriel
+      console.log(Schlag)
     }
   })
 
