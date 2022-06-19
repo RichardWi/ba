@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import fragmentShader from './shaders/ModelShader/fragmentShader.glsl'
 import vertexShader from './shaders/ModelShader/vertexShader.glsl'
-import { Group } from 'three'
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 //const gui = new dat.GUI()
 
@@ -47,6 +47,13 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(2)
+
+/*
+//Setup VR
+renderer.xr.enabled = true
+//VR Button
+document.body.appendChild(VRButton.createButton(renderer))
+*/
 
 //setup controls
 // Controls are used to control the camera, light, and other objects in the scene. control schema is orbit controls
