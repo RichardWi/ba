@@ -37,7 +37,7 @@ scene.add(camera)
 
 //Setup light source
 // inputs: (color, intensity) (0x is hexadecimal) (0xffffff is white)
-const light = new THREE.AmbientLight(0xffffff)
+const light = new THREE.AmbientLight(0xffffff, 5.0)
 scene.add(light)
 
 //Setup Renderer
