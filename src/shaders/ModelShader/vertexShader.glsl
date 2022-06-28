@@ -9,10 +9,12 @@ uniform vec4 uColor;
 attribute vec3 position;
 attribute vec2 uv;
 attribute vec4 color;
+attribute vec3 normal;
 
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec4 vColor;
+varying vec3 vNormal;
 
 void main()
 {   vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -24,5 +26,7 @@ void main()
     vUv = uv;
     vPosition = position;
     vColor = color;
+    vNormal = normal;
+    
 
 }
