@@ -43,5 +43,14 @@ section:nth-child(odd) {
   justify-content: flex-end;
 }
 
+.colorbox {
+  background-color: lightgrey;
+  width: 100px;
+  float: right;
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+}
+
 
 /*# sourceMappingURL=main.css.map*/

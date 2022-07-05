@@ -9,8 +9,13 @@ import fragmentShader from './shaders/ModelShader/fragmentShader.glsl'
 import vertexShader from './shaders/ModelShader/vertexShader.glsl'
 import { VRButton } from './vr/VRButton/VRButton.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+//import { CameraPosition } from './components/CameraPosition.js'
+import * as colorCalculator from './components/colorCalculator.js'
 
 const gui = new dat.GUI()
+var params = {
+  switch: false,
+}
 
 //add Stats to the page
 // 0: fps, 1: ms, 2: mb
@@ -25,7 +30,7 @@ const canvas = document.querySelector('.webgl')
 
 //Setup Scene
 const scene = new THREE.Scene()
-
+var scene2 = scene
 //Setup Background Color of Scene (0x is hexadecimal) (0x000000 is black)
 scene.background = new THREE.Color(0x000000)
 
@@ -73,6 +78,7 @@ const loader = new GLTFLoader()
 //Add dracoLoader to GLTF Loader
 loader.setDRACOLoader(dracoLoader)
 var Schlag = new THREE.Object3D()
+
 loader.load(
   '/models/schlag/DracoCompressed.glb', //path to file
   function (gltf) {
@@ -164,11 +170,34 @@ function addShader(Schlag) {
   //Cameraposition equals CameraPositionVector
   camera.position.set(CameraPositionVector.x, CameraPositionVector.y, CameraPositionVector.z)
 
-  console.log(scene)
-
   //Add UserInterface
   gui.add(material.uniforms.uOpacity, 'value', 0, 1).name('Change Material')
+  gui.add(params, 'switch').name('toggle color difference')
+
+  var scene2Material = new THREE.MeshBasicMaterial({ map: textureWHITE })
+  scene2 = scene.clone()
+  scene2.children[2].children[0].material = scene2Material
+  console.log(scene)
 }
+var read = new Uint8Array(1 * 1 * 4)
+var mouse = new THREE.Vector2()
+var calc = false
+var renderTarget
+renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight)
+document.body.appendChild(renderer.domElement)
+renderer.domElement.addEventListener('mouseup', onMouseMove)
+function onMouseMove(event) {
+  calc = true
+  mouse.x = event.clientX
+  mouse.y = event.clientY
+}
+var rgbS1
+var rgbS2
+var rgbC
+var deltaE
+var labS1
+var labS2
+
 // runtime Function getting called each frame
 const runtime = () => {
   stats.begin()
@@ -178,9 +207,35 @@ const runtime = () => {
   }
 
   // Renderer update
+  if (params.switch && calc) {
+    camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x | 0, mouse.y | 0, 1, 1)
+    renderer.setRenderTarget(renderTarget)
+    renderer.render(scene, camera)
+    renderer.setRenderTarget(null)
+    camera.clearViewOffset()
+    renderer.render(scene, camera)
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, 1, 1, read)
+    rgbS1 = [read[0], read[1], read[2]]
 
-  renderer.render(scene, camera)
+    camera.setViewOffset(renderer.domElement.width, renderer.domElement.height, mouse.x | 0, mouse.y | 0, 1, 1)
+    renderer.setRenderTarget(renderTarget)
+    renderer.render(scene2, camera)
+    renderer.setRenderTarget(null)
+    camera.clearViewOffset()
+    renderer.render(scene2, camera)
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, 1, 1, read)
 
+    rgbS2 = [read[0], read[1], read[2]]
+    labS1 = colorCalculator.rgb2lab(rgbS1)
+    labS2 = colorCalculator.rgb2lab(rgbS2)
+    deltaE = colorCalculator.deltaE(labS1, labS2)
+
+    console.log(deltaE)
+    rgbC = [rgbS2[0] - rgbS1[0], rgbS2[1] - rgbS1[1], rgbS2[2] - rgbS1[2]]
+
+    scene.background = new THREE.Color(deltaE / 100.0, deltaE / 100.0, deltaE / 100.0)
+    calc = false
+  }
   // Call runtime again on the next frame
   renderer.setAnimationLoop(function () {
     runtime()
