@@ -15,7 +15,7 @@ module.exports = merge(commonConfiguration, {
   },
   devServer: {
     host: 'local-ip',
-    port: portFinderSync.getPort(8000),
+    port: portFinderSync.getPort(8080),
     open: true,
     https: false,
     allowedHosts: 'all',
