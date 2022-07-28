@@ -1,27 +1,23 @@
 import * as THREE from 'three'
 
-export function getCameraPosition(Schlag) {
+export function getCameraPosition(scene) {
   //--*Set CameraPosition relative to the visible model*--//
   //Center of the bounding Sphere corresponds to center of the visible Model
   //Schlag.children[1] is the HelperBox Mesh
-  console.log(Schlag)
+  console.log(scene)
+  let model = scene.children[1].children[0]
+  let helperbox = new THREE.BoxHelper(model, 0xffff00)
   var CameraTargetVector = new THREE.Vector3(
-    Schlag.children[1].geometry.boundingSphere.center.x,
-    Schlag.children[1].geometry.boundingSphere.center.y,
-    Schlag.children[1].geometry.boundingSphere.center.z
+    model.geometry.boundingSphere.center.x,
+    model.geometry.boundingSphere.center.y,
+    model.geometry.boundingSphere.center.z
   )
 
   //CameraPositionHelperVector is a Point on one Edge of the HelperBox
   var CameraPositionHelperVector = new THREE.Vector3(
-    (Schlag.children[1].geometry.attributes.position.array[6] +
-      Schlag.children[1].geometry.attributes.position.array[9]) /
-      2,
-    (Schlag.children[1].geometry.attributes.position.array[7] +
-      Schlag.children[1].geometry.attributes.position.array[10]) /
-      2,
-    (Schlag.children[1].geometry.attributes.position.array[8] +
-      Schlag.children[1].geometry.attributes.position.array[11]) /
-      2
+    (helperbox.geometry.attributes.position.array[6] + helperbox.geometry.attributes.position.array[9]) / 2,
+    (helperbox.geometry.attributes.position.array[7] + helperbox.geometry.attributes.position.array[10]) / 2,
+    (helperbox.geometry.attributes.position.array[8] + helperbox.geometry.attributes.position.array[11]) / 2
   )
   //CameraPositionVector Calculates the CameraPostion
   //CameraPositionVector is the CameraTargetVector + 2x the connection vector between CameraTargetVector and CameraPositinHelperVector

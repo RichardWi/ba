@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 export default [
   {
-    source: '../../../static/models/schlag/Dracocompressed.glb',
+    source: '/models/schlag/model.glb',
     format: 'draco',
   },
 ]

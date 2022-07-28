@@ -7,7 +7,22 @@
   </head>
   <body>
     <canvas class="webgl"></canvas>
-    <input id="textureInput" type="file" accept="image/*" multiple />
-    <input id="modelInput" type="file" />
+    <div class="imageWrapper">
+      <div class="minValue">0</div>
+      <img class="ndvi" src="https://i.imgur.com/0lR0lRi.png" alt="NDVI SCale" />
+      <div class="maxValue">1</div>
+      <div class="minValue">?</div>
+      <img src="https://i.imgur.com/1NtzFuW.png" alt="Heat SCale" />
+      <div class="maxValue">?</div>
+      <div>Texturname:</div>
+      <div id="DataPoint">kein Wert</div>
+    </div>
+
+    <div class="inputWrapper">
+      <div>Texturen hinzufügen</div>
+      <input id="textureInput" type="file" accept="image/*" multiple />
+      <div>Modell hinzufügen</div>
+      <input id="modelInput" type="file" />
+    </div>
   </body>
 </html>

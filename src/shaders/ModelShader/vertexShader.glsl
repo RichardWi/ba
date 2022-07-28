@@ -10,11 +10,16 @@ attribute vec3 position;
 attribute vec2 uv;
 attribute vec4 color;
 attribute vec3 normal;
+attribute float pastColor;
+attribute float currentColor;
 
 varying vec2 vUv;
 varying vec3 vPosition;
 varying vec4 vColor;
 varying vec3 vNormal;
+varying float  vCurrentColor;
+varying float vPastColor;
+
 
 void main()
 {   vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -27,6 +32,8 @@ void main()
     vPosition = position;
     vColor = color;
     vNormal = normal;
+    vPastColor = pastColor;
+    vCurrentColor = currentColor;
     
 
 }
