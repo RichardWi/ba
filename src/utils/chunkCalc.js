@@ -11,8 +11,8 @@ export async function calcF(scene, imageArray) {
     color = []
     let img = imageArray[i].image
     // make the canvas same size as the image
-    some2dCanvasCtx.canvas.width = img.width
-    some2dCanvasCtx.canvas.height = img.height
+    some2dCanvasCtx.canvas.width = img.naturalWidth
+    some2dCanvasCtx.canvas.height = img.naturalHeight
     // draw the image into the canvas
     some2dCanvasCtx.drawImage(img, 0, 0)
     // copy the contents of the canvas
@@ -73,12 +73,12 @@ async function getAvrgColor(indexArrX, scene, shaderArr) {
       console.log(img)
 
       // make the canvas same size as the image
-      some2dCanvasCtx.canvas.width = img.width
-      some2dCanvasCtx.canvas.height = img.height
+      some2dCanvasCtx.canvas.width = img.naturalWidth
+      some2dCanvasCtx.canvas.height = img.naturalHeight
       // draw the image into the canvas
       some2dCanvasCtx.drawImage(img, 0, 0)
       // copy the contents of the canvas
-      var texData = some2dCanvasCtx.getImageData(0, 0, img.width, img.height)
+      var texData = some2dCanvasCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight)
       let i
       var color = []
       for (i of indexArrX) {
@@ -89,18 +89,15 @@ async function getAvrgColor(indexArrX, scene, shaderArr) {
         var tx = Math.min((emod(u, 1) * texData.width) | 0, texData.width - 1)
         var ty = Math.min((emod(v, 1) * texData.height) | 0, texData.height - 1)
         var offset = (ty * texData.width + tx) * 4
-        var r = texData.data[offset + 0]
         var g = texData.data[offset + 1]
-        var b = texData.data[offset + 2]
-        var a = texData.data[offset + 3]
+        //greyscale = r = b = g
+        //var r = texData.data[offset + 0]
+        //var b = texData.data[offset + 2]
+        //var a = texData.data[offset + 3]
 
-        color.push(r)
+        color.push(g)
       }
-      const average = color.reduce((a, b) => a + b, 0) / color.length
-
-      iDontKnow = { average, indexArr: indexArrX, shaderArr, color }
     })
-  return iDontKnow
 }
 
 function emod(n, m) {

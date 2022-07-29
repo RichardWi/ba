@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
-export function setCameraPosition(Schlag, canvas) {
+export function setCameraPosition(scene, canvas) {
+  let Schlag = scene.children[1].children[0]
   console.log(Schlag.children[0].geometry.boundingBox.min.x)
   var testPos1 = [
     Schlag.children[0].geometry.boundingBox.min.x,

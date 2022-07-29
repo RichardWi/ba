@@ -115,7 +115,9 @@ function callColorCalculator() {
     console.log(colorArray)
     BufferAttributeColorArray = []
     for (let i = 0; i < colorArray.length; i++) {
+      colorArray[i].pop()
       let Uint8ArrayColor = new Uint8Array(colorArray[i])
+
       let calculatedColor = new THREE.BufferAttribute(Uint8ArrayColor, 1)
       let attributesColor = { calculatedColor }
       BufferAttributeColorArray.push(calculatedColor)
@@ -139,6 +141,7 @@ function callColorCalculator() {
     console.log(currentColor)
     Object.assign(scene.children[1].children[0].geometry.attributes, currentColor)
     Object.assign(scene.children[1].children[0].geometry.attributes, pastColor)
+
     console.log(scene.children[1].children[0].geometry.attributes)
     shaderUtilFunction()
   })
@@ -474,7 +477,7 @@ inputTextures.addEventListener(
     let files = Array.from(e.target.files).map((file) => {
       // Define a new file reader
       let reader = new FileReader()
-
+      console.log(e.target.files)
       // Create a new promise
       return new Promise((resolve) => {
         // Resolve the promise after reading file
@@ -493,12 +496,12 @@ inputTextures.addEventListener(
     for (let i = 0; i < res.length; i++) {
       let texture = new THREE.TextureLoader().load(res[i])
       texture.flipY = false
-      let name = 'texture ' + i
+      let name = 'Name: ' + e.target.files[i].name + ' Datum: ' + e.target.files[i].lastModifiedDate
       textureArray.push({ name, texture })
 
       let image = new Image()
       image.src = res[i]
-      name = 'image ' + i
+      name = 'Name: ' + e.target.files[i].name + ' Datum: ' + e.target.files[i].lastModifiedDate
       imageArray.push({ name, image })
     }
     console.log(textureArray, imageArray)
@@ -632,6 +635,25 @@ var pointofint1
 //window.addEventListener('mouseup', (e) => {})
 
 window.addEventListener('mouseup', (e) => {
+  if (params.pickColor === false) {
+    firstclick = true
+    secondclick = false
+    is1 = null
+    is2 = null
+    pointofint1 = null
+    pointofint2 = null
+    scene.remove(
+      scene.children[3],
+      scene.children[4],
+      scene.children[5],
+      scene.children[6],
+      scene.children[7],
+      scene.children[8],
+      scene.children[9],
+      scene.children[10],
+      scene.children[11]
+    )
+  }
   if (params.pickColor) {
     if (firstclick) {
       pointofint1 = getColor.getIntersect(e, camera, scene)
@@ -643,10 +665,10 @@ window.addEventListener('mouseup', (e) => {
     mouseP.x = (e.clientX / window.innerWidth) * 2 - 1
     mouseP.y = -(e.clientY / window.innerHeight) * 2 + 1
     raycaster.setFromCamera(mouseP, camera)
-    const objectsToIntersect = [scene.children[1].children[0]]
-    const intersects = raycaster.intersectObjects(objectsToIntersect)
+    let objectsToIntersect = [scene.children[1].children[0]]
+    let intersects = raycaster.intersectObjects(objectsToIntersect)
 
-    for (const intersect of intersects) {
+    for (let intersect of intersects) {
       uvIntersect = intersect.uv
       pointIntersect = intersect.point
       console.log(intersect.point)
@@ -679,13 +701,30 @@ window.addEventListener('mouseup', (e) => {
         console.log('ok')
         timeout = setTimeout(function () {
           console.log(is1, is2)
+          let count = 0
+          let calo = []
+          while (count < scene.children[1].children[0].geometry.attributes.currentColor.count * 3) {
+            if (
+              (scene.children[1].children[0].geometry.attributes.position.array[count] =
+                Math.min(is1.x, is2.x) &&
+                scene.children[1].children[0].geometry.attributes.position.array[count] < Math.max(is1.x, is2.x) &&
+                scene.children[1].children[0].geometry.attributes.position.array[count + 1] > Math.min(is1.y, is2.y) &&
+                scene.children[1].children[0].geometry.attributes.position.array[count + 1] < Math.max(is1.y, is2.y))
+            ) {
+              calo.push(scene.children[1].children[0].geometry.attributes.currentColor.array[count / 3])
+            }
+            count += 3
+          }
+          let average = calo.reduce((a, b) => a + b, 0) / calo.length
+          console.log(calo)
+          console.log(average)
 
           let colors = scene.children[1].children[0].geometry
 
           var col = imgColor.getAverageRGB(imgEL, AnteilX1, AnteilY1, AnteilX2, AnteilY2, 1)
 
-          scene.background = new THREE.Color(col.r / 255.0, col.g / 255.0, col.b / 255.0)
-          plane.material.color = new THREE.Color(col.r / 255.0, col.g / 255.0, col.b / 255.0)
+          scene.background = new THREE.Color(average / 255.0, average / 255.0, average / 255.0)
+          plane.material.color = new THREE.Color(average / 255.0, average / 255.0, average / 255.0)
 
           console.log(plane)
           params.pickColor = false
@@ -696,7 +735,7 @@ window.addEventListener('mouseup', (e) => {
       } else {
         params.pickColor = false
         console.log('cancel')
-        firstclick = false
+        firstclick = true
         secondclick = false
       }
       //console.log(is1)
