@@ -17,13 +17,13 @@ varying float vPastColor;
       if (uChange){
 
         if(vCurrentColor < vPastColor)
-        { 
-          gl_FragColor=vec4(1.0,0.0,0.0,1.0);
+        { float colorDiff = vPastColor - vCurrentColor;
+          gl_FragColor=vec4(colorDiff,0.0,0.0,1.0);
         }
 
         if(vCurrentColor > vPastColor )
-        {
-          gl_FragColor=vec4(0.0,1.0,0.0,1.0);       
+        { float colorDiff = vCurrentColor - vPastColor;
+          gl_FragColor=vec4(0.0,colorDiff,0.0,1.0);       
         }
 
         if(vCurrentColor== vPastColor)
