@@ -1,0 +1,174 @@
+{
+    "accessors": [
+        {
+            "componentType": 5125,
+            "count": 3328407,
+            "max": [
+                649792
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        {
+            "componentType": 5126,
+            "count": 649793,
+            "max": [
+                191.061279296875,
+                93.02143096923828,
+                191.62232971191406
+            ],
+            "min": [
+                -47.377323150634766,
+                -30.825725555419922,
+                150.97280883789062
+            ],
+            "type": "VEC3"
+        },
+        {
+            "componentType": 5126,
+            "count": 649793,
+            "max": [
+                0.999951958656311,
+                0.9999939799308777,
+                1.0000001192092896
+            ],
+            "min": [
+                -0.9999922513961792,
+                -0.9999917149543762,
+                -1.0000001192092896
+            ],
+            "type": "VEC3"
+        },
+        {
+            "componentType": 5126,
+            "count": 649793,
+            "max": [
+                0.9997950196266174,
+                0.99609375
+            ],
+            "min": [
+                0,
+                0.000022113323211669922
+            ],
+            "type": "VEC2"
+        },
+        {
+            "componentType": 5121,
+            "count": 649793,
+            "max": [
+                254,
+                246,
+                253
+            ],
+            "min": [
+                0,
+                0,
+                0
+            ],
+            "normalized": true,
+            "type": "VEC3"
+        }
+    ],
+    "asset": {
+        "generator": "Agisoft Metashape",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 11970678
+        },
+        {
+            "buffer": 1,
+            "byteOffset": 0,
+            "byteLength": 3195894
+        }
+    ],
+    "buffers": [
+        {
+            "uri": "image0.jpg",
+            "byteLength": 11970678
+        },
+        {
+            "byteLength": 3195894,
+            "uri": "0_mesh_0.drc"
+        }
+    ],
+    "images": [
+        {
+            "bufferView": 0,
+            "mimeType": "image/jpeg"
+        }
+    ],
+    "materials": [
+        {
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "index": 0
+                },
+                "metallicFactor": 0,
+                "roughnessFactor": 1
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "primitives": [
+                {
+                    "attributes": {
+                        "COLOR_0": 4,
+                        "NORMAL": 2,
+                        "POSITION": 1,
+                        "TEXCOORD_0": 3
+                    },
+                    "indices": 0,
+                    "material": 0,
+                    "mode": 4,
+                    "extensions": {
+                        "KHR_draco_mesh_compression": {
+                            "bufferView": 1,
+                            "attributes": {
+                                "COLOR_0": 1,
+                                "NORMAL": 2,
+                                "POSITION": 0,
+                                "TEXCOORD_0": 3
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "mesh": 0
+        }
+    ],
+    "samplers": [
+        {
+            "minFilter": 9729
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0
+        }
+    ],
+    "extensionsRequired": [
+        "KHR_draco_mesh_compression"
+    ],
+    "extensionsUsed": [
+        "KHR_draco_mesh_compression"
+    ]
+}

@@ -20,7 +20,8 @@ export async function dracoLoader(modelUrl) {
   var model = new THREE.Object3D()
 
   var dracoModel = await loader.loadAsync(
-    modelUrl, //path to file
+    '/models/schlag/exportindex.gltf',
+    //modelUrl, //path to file
 
     undefined,
     function (error) {
