@@ -108,6 +108,7 @@ function callColorCalculator() {
     //pastColor is the color of the previous texture in the array
     let currentColor = { currentColor: BufferAttributeColorArray[0] }
     let pastColor = { pastColor: BufferAttributeColorArray[0] }
+
     //add the BufferAttribute to the model so it can be used in the shader
     Object.assign(scene.children[1].children[0].geometry.attributes, currentColor)
     Object.assign(scene.children[1].children[0].geometry.attributes, pastColor)
