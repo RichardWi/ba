@@ -3,26 +3,17 @@ import './style.css'
 import * as THREE from 'three'
 import Stats from 'stats.js'
 import * as dat from 'dat.gui'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import fragmentShader from './shaders/ModelShader/fragmentShader.glsl'
 import vertexShader from './shaders/ModelShader/vertexShader.glsl'
-import { VRButton } from './vr/VRButton/VRButton.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
-import * as cameraPosition from './components/cameraPosition.js'
-import * as colorCalculator from './components/colorCalculator.js'
-import * as imgColor from './components/imgColorCalculator.js'
-import * as textureLoaderHelper from './components/textureLoaderHelper.js'
 import * as rendererUtil from './utils/renderer.js'
 import * as sceneUtil from './utils/scene.js'
 import * as cameraUtil from './utils/camera.js'
 import * as controlsUtil from './utils/controls.js'
 import * as content from './utils/content.js'
 import * as shaderUtil from './utils/shader.js'
-import * as cameraPositionSnapshot from './components/cameraPositionSnapshot.js'
-import * as getColor from './components/colorPicker'
-import * as calc from './utils/chunkCalc.js'
-import { BufferAttribute } from 'three'
+import * as getColor from './utils/colorPicker'
+import * as calc from './utils/calculateColorArrays.js'
 
 //variables
 var orbitcontrols,
@@ -72,10 +63,14 @@ var controls = controlsUtil.setUpControls(camera, canvas)
 orbitcontrols = true
 
 //Setup Content
-//callback has two parameters, the scene with the model and an array with the textures
+/*
+callback has four parameters
+1. scene with the model, a boxhelper (if fetchmodel is true) and ambient light
+2. textureArray with the textures (if fetchmodel is true) else it is undefined
+3. imageArray with the images of which the textures where created (if fetchmodel is true) else it is undefined
+4. HeatMap and NDVI Map
+*/
 content.loadInitialContent(scene, fetchModels).then((callback) => {
-  console.log(callback)
-
   scene = callback.scene
   HeatMap = callback.rampMaps.HeatMap
   ndviMap = callback.rampMaps.NDVIMap
@@ -86,103 +81,99 @@ content.loadInitialContent(scene, fetchModels).then((callback) => {
   if (callback.imageArray != undefined) {
     imageArray = callback.imageArray
   }
-
-  console.log('callColorCalculator', callback)
   callColorCalculator()
 })
 
-function shaderUtilFunction() {
-  console.log(textureArray)
-  shaderUtil
-    .createShaderMaterials(scene.children[1], textureArray, HeatMap, ndviMap, vertexShader, fragmentShader)
-    .then((returnedArray) => {
-      materialArray = returnedArray
-      scene = shaderUtil.addShader(scene, materialArray, textureArray)
-
-      camera.position.copy(cameraPosition.getCameraPosition(scene))
-
-      addGui()
-
-      //add Shader to the Model
-    })
-}
-
+//calculate the Color Arrays
 function callColorCalculator() {
+  //Set Controls to the center of the Model,
+  //is run here because callColorCalculator has to be run after every model change, so does the controls target update
   controls = controlsUtil.setControlsTarget(controls, scene.children[1].children[0].geometry.boundingSphere.center)
   controls.update()
-  console.log(scene, imageArray, textureArray)
-  calc.calcF(scene, imageArray).then(function (colorArray) {
-    console.log(colorArray)
-    BufferAttributeColorArray = []
-    for (let i = 0; i < colorArray.length; i++) {
-      colorArray[i].pop()
-      let Uint8ArrayColor = new Uint8Array(colorArray[i])
+  //Set Camera view to the center of the Model,
+  //is run here because callColorCalculator has to be run after every model change, so does the camera viewing angle and position update
+  camera.position.copy(cameraUtil.getCameraPosition(scene))
 
+  //calculate the Color Arrays from the image Array
+  calc.calcColorArrays(scene, imageArray).then(function (colorArray) {
+    BufferAttributeColorArray = []
+    //Create BufferAttribute from the Color Arrays
+    for (let i = 0; i < colorArray.length; i++) {
+      let Uint8ArrayColor = new Uint8Array(colorArray[i])
       let calculatedColor = new THREE.BufferAttribute(Uint8ArrayColor, 1)
-      let attributesColor = { calculatedColor }
       BufferAttributeColorArray.push(calculatedColor)
     }
-    console.log(BufferAttributeColorArray)
-    let Uint8ArrayforShader = new Uint8Array(colorArray[0])
     //new BufferAttribute with the calculated Color
-    colorArray.sort(function (a, b) {
-      return a - b
-    })
-    console.log(colorArray[Math.floor(colorArray.length - 1)])
-    let median = colorArray[Math.floor(colorArray.length / 2)]
-    let firststQuartile = colorArray[Math.floor(colorArray.length / 4)]
-    let thirdQuartile = colorArray[Math.floor((colorArray.length / 4) * 3)]
-    console.log(median, firststQuartile, thirdQuartile)
-    let calculatedColor = new THREE.BufferAttribute(Uint8ArrayforShader, 1)
-    let attributesColor = { calculatedColor }
+    //currentColor is the color of the current displayed texture
+    //pastColor is the color of the previous texture in the array
     let currentColor = { currentColor: BufferAttributeColorArray[0] }
-    //let currentColor = { firstcolor }
     let pastColor = { pastColor: BufferAttributeColorArray[0] }
-    console.log(currentColor)
+    //add the BufferAttribute to the model so it can be used in the shader
     Object.assign(scene.children[1].children[0].geometry.attributes, currentColor)
     Object.assign(scene.children[1].children[0].geometry.attributes, pastColor)
 
-    console.log(scene.children[1].children[0].geometry.attributes)
+    //call the shaderUtilFunction to create the shaders used for texturing the model
     shaderUtilFunction()
   })
 }
 
+function shaderUtilFunction() {
+  //create the shaders
+  //returns an array of materials, one material calculated from each texture
+  shaderUtil
+    .createShaderMaterials(scene.children[1], textureArray, HeatMap, ndviMap, vertexShader, fragmentShader)
+    .then((returnedArray) => {
+      //add the shader materials to the materialArray
+      materialArray = returnedArray
+      //add the first material to the model and change the display name to the name of the texture
+      scene = shaderUtil.addShader(scene, materialArray, textureArray)
+
+      //add the user interaction panel to the page
+      addGui()
+    })
+}
+
 function addGui() {
+  //gui is rebuild after every model and texture change to avoid bugs, so it is destroyed first in case it already exists
   gui.destroy()
+
   gui = new dat.GUI()
+  //adds Checkbox to toggle the display of the NDVI Color Map
   gui
     .add(params, 'showNDVI')
     .name('NDVI Farbskala')
     .onChange(function (value) {
       materialArray[params.textureArray].uniforms.uNdviColorPalette.value = value
     })
+  //adds Checkbox to toggle the display of the Heat Color Map
   gui
     .add(params, 'showHeat')
     .name('Thermal Farbskala')
     .onChange(function (value) {
       materialArray[params.textureArray].uniforms.uHeatColorPalette.value = value
     })
+  //adds Checkbox to toggle the display of the change of Color from the previous texture/material/data point
   gui
     .add(params, 'showChange')
-    .name('Änderung')
+    .name('Änderung zum vorherigen Datenpunkt')
     .onChange(function (value) {
       materialArray[params.textureArray].uniforms.uChange.value = value
     })
-
+  //adds checkbox to start the color picker
   gui
     .add(params, 'pickColor')
     .name('Farbwertrechner')
     .onChange(function () {})
+  //adds a slider to change the texture
   gui
     .add(params, 'textureArray', 0, materialArray.length - 1, 1)
-    .name('Slider to Iterate through NDVI')
+    .name('Datenpunkt ändern')
     .onChange(function () {
-      //console.log(materialArray)
       scene.children[1].children[0].material = materialArray[params.textureArray]
       materialArray[params.textureArray].uniforms.uNdviColorPalette.value = params.showNDVI
       materialArray[params.textureArray].uniforms.uHeatColorPalette.value = params.showHeat
+      materialArray[params.textureArray].uniforms.uChange.value = params.showChange
       document.getElementById('DataPoint').innerHTML = textureArray[params.textureArray].name
-
       let currentColor = { currentColor: BufferAttributeColorArray[params.textureArray] }
       let pastColor = { pastColor: BufferAttributeColorArray[params.textureArray - 1] }
       if (params.textureArray === 0) {
@@ -190,348 +181,75 @@ function addGui() {
       } else {
         pastColor = pastColor
       }
-      console.log(currentColor, pastColor)
       Object.assign(scene.children[1].children[0].geometry.attributes, currentColor)
       Object.assign(scene.children[1].children[0].geometry.attributes, pastColor)
-      console.log(scene.children[1].children[0].geometry.attributes)
     })
 }
-//Setup Loaders
-//TextureLoader
-const textureLoader = new THREE.TextureLoader()
 
-//Array to hold all Textures
-
-//Array to hold all Materials created with Textures
-
-//Setup dracoLoader to load compressed gltf/glb files
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/')
-dracoLoader.setDecoderConfig({ type: 'js' })
-
-//*Load Model and Add to Scene*//
-//Setup GLTF Loader
-const loader = new GLTFLoader()
-//Add dracoLoader to GLTF Loader
-loader.setDRACOLoader(dracoLoader)
-
-//Alert load models from server or upload your own
-
-function loadModelsFromServer() {
-  loader.load(
-    '/models/schlag/DracoCompressed.glb', //path to file
-    function (gltf) {
-      Schlag = gltf.scene.clone()
-      console.log(gltf.scene)
-
-      console.log(Schlag)
-      scene.add(Schlag)
-
-      createShader(Schlag)
-    },
-
-    undefined,
-    function (error) {
-      console.error(error)
-    }
-  )
-
-  //textureArray = textureLoaderHelper.getTexture(textureArray, 'models/textures/ndvi/obj' + 0 + '.jpg')
-  //console.log(textureArray)
-  var texCount = 0
-  var loadingTextures = true
-  //4 ist Workaround weil loadTextures nicht false gesetzt wird, lädt maximal 4,
-  //wird 4 beliebig hochgesetzt, wird ein error geworfen, Programm funktioniert trotzdem ohne Probleme
-  while (texCount < 4 && loadingTextures) {
-    loadTextures()
-    texCount++
-  }
-  function loadTextures() {
-    textureLoader.load(
-      // resource URL
-      'models/textures/ndvi/obj' + [texCount] + '.jpg',
-
-      // onLoad callback
-      function (texture) {
-        texture.flipY = false
-        textureArray.push(texture)
-        console.log(textureArray)
-      },
-
-      // onProgress callback currently not supported
-      undefined,
-
-      // onError callback
-      function (err) {
-        console.error('All Textures Loaded or Error')
-      }
-    )
-  }
-}
-
-//Maps have 600 Width, HARDCODED VALUE IN SHADER
-function loadColorMaps() {
-  textureLoader.load(
-    // resource URL
-    'models/textures/colorMaps/NDVIMap.png',
-
-    // onLoad callback
-    function (texture) {
-      ndviMap = texture
-    },
-    undefined,
-
-    // onError callback
-    function (err) {
-      console.error('No NDVI Map Loaded')
-    }
-  )
-  textureLoader.load(
-    // resource URL
-    'models/textures/colorMaps/HeatMap.png',
-
-    // onLoad callback
-    function (texture) {
-      HeatMap = texture
-    },
-    undefined,
-
-    // onError callback
-    function (err) {
-      console.error('No Heat Map Loaded')
-    }
-  )
-}
-loadColorMaps()
-
-//Add Shader
-
-function createShader(Schlag) {
-  if (scene.children.length > 3) {
-    for (let i = scene.children.length - 1; i >= 3; i--) {
-      scene.remove(scene.children[i])
-    }
-  }
-
-  if (textureArray.length == 0) {
-    textureArray.push(Schlag.children[0].material.map)
-  }
-  materialArray = []
-  for (let i = 0; i < textureArray.length; i++) {
-    var material = new THREE.RawShaderMaterial({
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      transparent: true,
-      uniforms: {
-        uHeatColorPalette: { value: false },
-        uNdviColorPalette: { value: false },
-        uNDVIColorMap: { value: ndviMap },
-        uHeatColorMap: { value: HeatMap },
-
-        uTexture: { value: textureArray[i] },
-      },
-    })
-    materialArray.push(material)
-  }
-  addShader(Schlag)
-}
-function addShader(Schlag) {
-  //build shader material
-
-  //set shader material to the model
-  console.log(materialArray)
-  console.log(scene)
-  scene.children[1].children[0].material = materialArray[0]
-  document.getElementById('DataPoint').innerHTML = textureArray[0].name
-
-  //Position of the model Schlag
-
-  //Setup Helper Box Around Schlag Mesh
-  let bbox = new THREE.BoxHelper(scene.children[1].children[0], 0xffff00)
-
-  //add bbox to Schlag group
-  //Schlag.add(bbox)
-
-  //set OrbitControls Target to the Center of the visible Model
-  /*controls.target.set(
-    Schlag.children[1].geometry.boundingSphere.center.x,
-    Schlag.children[1].geometry.boundingSphere.center.y,
-    Schlag.children[1].geometry.boundingSphere.center.z
-  )
-  controls.update()
-*/
-  //Add UserInterface
-
-  // gui.add(material.uniforms.uOpacity, 'value', 0, 1).name('Change Material')
-  gui.destroy()
-  gui = new dat.GUI()
-  gui
-    .add(params, 'showNDVI')
-    .name('NDVI Farbskala')
-    .onChange(function (value) {
-      materialArray[params.textureArray].uniforms.uNdviColorPalette.value = value
-    })
-  gui
-    .add(params, 'change')
-    .name('NDVI Farbskala')
-    .onChange(function (value) {
-      materialArray[params.textureArray].uniforms.uChange.value = value
-    })
-  gui
-    .add(params, 'showHeat')
-    .name('Thermal Farbskala')
-    .onChange(function (value) {
-      materialArray[params.textureArray].uniforms.uHeatColorPalette.value = value
-    })
-  //gui.add(params, 'showNDVI').name('toggle color difference')
-
-  gui
-    .add(params, 'pickColor')
-    .name('Farbwertrechner')
-    .onChange(function () {})
-  gui
-    .add(params, 'textureArray', 0, materialArray.length - 1, 1)
-    .name('Slider to Iterate through NDVI')
-    .onChange(function () {
-      console.log(materialArray)
-      scene.children[1].children[0].material = materialArray[params.textureArray]
-      materialArray[params.textureArray].uniforms.uNdviColorPalette.value = params.showNDVI
-      materialArray[params.textureArray].uniforms.uHeatColorPalette.value = params.showHeat
-      document.getElementById('DataPoint').innerHTML = textureArray[params.textureArray].name
-    })
-
-  /*  var scene2Material = new THREE.MeshBasicMaterial({ map: textureWHITE })
-  scene2 = scene.clone()
-  scene2.children[2].children[0].material = scene2Material
-  console.log(scene)*/
-  console.log(camera)
-  camera.position.copy(cameraPosition.getCameraPosition(scene))
-
-  console.log(retA)
-  //camera = retA[0]
-
-  console.log(camera)
-}
-
-const loaderIMG1 = new THREE.ImageLoader()
-function wrapper() {
-  var img
-  loaderIMG1
-    .loadAsync(
-      // resource URL
-      '/models/textures/ndvi/obj0.jpg',
-
-      // onLoad callback
-      function (image) {
-        return (img = image)
-      },
-
-      // onProgress callback currently not supported
-      undefined,
-
-      // onError callback
-      function () {
-        console.error('An error happened.')
-      }
-    )
-    .then(function (img) {
-      var u = 0.5
-      var v = 0.5
-      var some2dCanvasCtx = document.createElement('canvas').getContext('2d')
-      console.log(img)
-
-      // make the canvas same size as the image
-      some2dCanvasCtx.canvas.width = img.width
-      some2dCanvasCtx.canvas.height = img.height
-      // draw the image into the canvas
-      some2dCanvasCtx.drawImage(img, 0, 0)
-      // copy the contents of the canvas
-      var texData = some2dCanvasCtx.getImageData(0, 0, img.width, img.height)
-      var tx = Math.min((emod(u, 1) * texData.width) | 0, texData.width - 1)
-      var ty = Math.min((emod(v, 1) * texData.height) | 0, texData.height - 1)
-      var offset = (ty * texData.width + tx) * 4
-      var r = texData.data[offset + 0]
-      var g = texData.data[offset + 1]
-      var b = texData.data[offset + 2]
-      var a = texData.data[offset + 3]
-
-      console.log(r, g, b, a)
-    })
-}
-// this is only needed if your UV coords are < 0 or > 1
-// if you're using CLAMP_TO_EDGE then you'd instead want to
-// clamp the UVs to 0 to 1.
-function emod(n, m) {
-  return ((n % m) + m) % m
-}
-
-//Add File Input for Textures
+//Add File Input for Textures, takes multiple files
 const inputTextures = document.getElementById('textureInput')
 if (scene.children[2] === undefined) {
   inputTextures.disabled = true
 }
-
 inputTextures.addEventListener(
   'change',
   async function (e) {
     let files = Array.from(e.target.files).map((file) => {
-      // Define a new file reader
       let reader = new FileReader()
       console.log(e.target.files)
-      // Create a new promise
       return new Promise((resolve) => {
-        // Resolve the promise after reading file
         reader.onload = () => resolve(reader.result)
-
-        // Read the file as a text
         reader.readAsDataURL(file)
       })
     })
-
-    // At this point you'll have an array of results
+    // promise waits for all textures to be loaded
+    //then creates a texture array and an image array
+    //image array for color array, texture array for materials
     let res = await Promise.all(files)
     textureArray = []
     imageArray = []
     console.log(res.length)
     for (let i = 0; i < res.length; i++) {
+      //texture array
       let texture = new THREE.TextureLoader().load(res[i])
       texture.flipY = false
       let name = 'Name: ' + e.target.files[i].name + ' Datum: ' + e.target.files[i].lastModifiedDate
       textureArray.push({ name, texture })
-
+      //image array
       let image = new Image()
       image.src = res[i]
       name = 'Name: ' + e.target.files[i].name + ' Datum: ' + e.target.files[i].lastModifiedDate
       imageArray.push({ name, image })
     }
-    console.log(textureArray, imageArray)
+
+    //calculate the color, create material and update gui
     callColorCalculator()
   },
   false
 )
 
 //Add File Input for Model
-
 const inputModel = document.getElementById('modelInput')
-
 inputModel.addEventListener(
   'change',
   function (e) {
     const file = e.target.files[0]
     const url = URL.createObjectURL(file)
     let gltfloader = new GLTFLoader()
+
     gltfloader.load(url, (gltf) => {
-      console.log(gltf)
+      //delete an old model which might be there from a previous load and its box helper
       scene.remove(scene.children[2])
       scene.remove(scene.children[1])
-      //scene.children = scene.children[0]
+
+      //add the box helper
       let bbox = new THREE.BoxHelper(gltf.scene.children[0], 0xffff00)
-      //Schlag = gltf.scene.clone()
+
       scene.add(gltf.scene.clone())
       scene.add(bbox)
-      console.log(scene)
       inputTextures.disabled = false
-      camera.position.copy(cameraPosition.getCameraPosition(scene))
+      //is run so u can see the model in the right view even before uploading the textures
+      camera.position.copy(cameraUtil.getCameraPosition(scene))
       controls = controlsUtil.setControlsTarget(controls, scene.children[1].children[0].geometry.boundingSphere.center)
       controls.update()
     })
@@ -539,89 +257,8 @@ inputModel.addEventListener(
   false
 )
 
-console.log(localStorage)
-
-//Color Variante 2
-//Read Local Storage for Saved Data to Calculate NDVI
-/*
-var AllParts = []
-function addStoredPlanes() {
-  for (var i = 0; i < localStorage.length; i++) {
-    let key_deserialized = JSON.parse(localStorage.getItem(localStorage.key(i)))
-    console.log(key_deserialized)
-    AllParts.push(key_deserialized)
-  }
-
-  let a = 0
-  while (AllParts.length > a) {
-    let col = imgColor.getAverageRGB(
-      imgEL,
-      AllParts[a].AnteilX1,
-      AllParts[a].AnteilY1,
-      AllParts[a].AnteilX2,
-      AllParts[a].AnteilY2,
-      1
-    )
-    var plane = new THREE.Mesh(pgeometry, pmaterial)
-    scene.add(plane)
-    plane.position.set(
-      Math.abs(AllParts[a].is1.x + AllParts[a].is2.x) / 2,
-      Math.abs(AllParts[a].is1.y + is2.y) / 2,
-      Math.abs(AllParts[a].is1.z + AllParts[a].is2.z) / 2 + 3
-    )
-    plane.material.color = new THREE.Color(col.r / 255.0, col.g / 255.0, col.b / 255.0)
-
-    a++
-  }
-}
-addStoredPlanes()
-console.log(AllParts)
-*/ /*
-var timeout, firstclick, secondclick
-function colorPicker() {
-  console.log('colorPicker')
-  if (params.pickColor) {
-    if (confirm('Ersten Click auf den Bildschirm um den NDVI-Index in einem Teilbereich zu bestimmen')) {
-      console.log('ok')
-      timeout = setTimeout(function () {
-        firstclick = true
-      }, 1000)
-    } else {
-      params.pickColor = false
-      console.log('cancel')
-    }
-  }
-}*/
-/*
-
-function ColorPicker() {
-  if (params.showHeat) {
-    if (confirm('Ersten Click auf den Bildschirm um den NDVI-Index in einem Teilbereich zu bestimmen')) {
-      console.log('ok')
-      timeout = setTimeout(function () {
-        firstclick = true
-      }, 1000)
-    } else {
-      params.showHeat = false
-      console.log('cancel')
-    }
-  }
-}
-*/
-//raycaster
-
-/*
-window.addEventListener('click', function (e) {
-  if (params.pickColor) {
-    mouseP = { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }
-    timeout = setTimeout(function () {
-      getColor.getColor(params.pickColor, camera, scene, mouseP)
-    }, 1000)
-    console.log(mouseP)
-    return mouseP
-  }
-})
-*/
+// FIRST ITERATION OF A FUNCTION TO CALCULATE THE COLOR OF 2 POINTS CHOSEN BY THE USER
+// NOT FINISHED
 const raycaster = new THREE.Raycaster()
 const mouseP = new THREE.Vector2()
 var firstclick = true
@@ -632,6 +269,7 @@ var pointIntersect
 var timeout
 var pointofint2
 var pointofint1
+var uvIntersect = new THREE.Vector2()
 //window.addEventListener('mouseup', (e) => {})
 
 window.addEventListener('mouseup', (e) => {
@@ -721,8 +359,6 @@ window.addEventListener('mouseup', (e) => {
 
           let colors = scene.children[1].children[0].geometry
 
-          var col = imgColor.getAverageRGB(imgEL, AnteilX1, AnteilY1, AnteilX2, AnteilY2, 1)
-
           scene.background = new THREE.Color(average / 255.0, average / 255.0, average / 255.0)
           plane.material.color = new THREE.Color(average / 255.0, average / 255.0, average / 255.0)
 
@@ -795,54 +431,12 @@ window.addEventListener('mouseup', (e) => {
   }
 })
 
-var uvIntersect = new THREE.Vector2()
-// instantiate a loader
-const loaderIMG = new THREE.ImageLoader()
-var imgEL = 0
-// load a image resource
-loaderIMG.load(
-  // resource URL
-  '/models/textures/ndvi/Orthomosaic.jpg',
-
-  // onLoad callback
-  function (image) {
-    return (imgEL = image)
-  },
-
-  // onProgress callback currently not supported
-  undefined,
-
-  // onError callback
-  function () {
-    console.error('An error happened.')
-  }
-)
-/*
-//Color Variant 1
-var read = new Uint8Array(1 * 1 * 4)
-var mouse = new THREE.Vector2()
-var calc = false
-var renderTarget
-renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight)
-document.body.appendChild(renderer.domElement)
-renderer.domElement.addEventListener('mouseup', onMouseMove)
-function onMouseMove(event) {
-  calc = true
-  mouse.x = event.clientX
-  mouse.y = event.clientY
-}
-var rgbS1
-var rgbS2
-var rgbC
-var deltaE
-var labS1
-var labS2
-*/
-
 // runtime Function getting called each frame
 const runtime = () => {
+  //start measuring stats
   stats.begin()
 
+  //updates the controls so user can interact with the scene
   if (orbitcontrols) {
     controls.update()
   }
@@ -850,10 +444,11 @@ const runtime = () => {
   // Call runtime again on the next frame
   renderer.setAnimationLoop(function () {
     runtime()
-
+    //pass scene and camera to the renderer and render the scene for this frame
     renderer.render(scene, camera)
   })
 
+  //end measuring stats
   stats.end()
 }
 
