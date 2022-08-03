@@ -1,4 +1,4 @@
 export default {
-  NDVI: 'models/textures/colorMaps/NDVIMap.png',
-  HEAT: 'models/textures/colorMaps/HeatMap.png',
+  NDVI: 'models/textures/colormaps/NDVIMap.png',
+  HEAT: 'models/textures/colormaps/HeatMap.png',
 }
