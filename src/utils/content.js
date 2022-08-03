@@ -60,18 +60,19 @@ async function loadRampMaps(colorMaps) {
   return { NDVIMap, HeatMap }
 }
 
+//can easily be expanded for different loaders for different file types
 async function loadModel(modelData, scene) {
-  console.log(modelData)
-
   switch (modelData[0].format) {
     case 'draco':
-      const modelTest = await dracoLoader.dracoLoader(modelData[0].source, scene).then((modelTest) => {
-        return modelTest
+      const dracoModel = await dracoLoader.dracoLoader(modelData[0].source, scene).then((dracoModel) => {
+        return dracoModel
       })
-      return modelTest
+      return dracoModel
     case 'gltf':
-      //  model = gltfLoader.load(modelUrl)
-      return 'model2'
+      const gltfModel = await gltfLoader.gltfLoader(modelData[0].source, scene).then((gltfModel) => {
+        return gltfModel
+      })
+      return gltfModel
   }
 }
 
