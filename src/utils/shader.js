@@ -1,5 +1,11 @@
 import * as THREE from 'three'
 
+//creats a shader material for each texture array which can be used to texture the model
+//vertex shader = calculates positon of each vertex
+//fragment shader = calculates color of each vertex
+//uniforms = passes data to the shader
+//data the shader always gets passed if available and is needed: BufferAttribute uv, BufferAttribute position, BufferAttribute normal, BufferAttribute color
+//uniform values can be changed by the gui and will result in different color output
 export async function createShaderMaterials(model, textureArray, HeatMap, ndviMap, vertexShader, fragmentShader) {
   let materialArray = []
 
@@ -19,7 +25,9 @@ export async function createShaderMaterials(model, textureArray, HeatMap, ndviMa
         uNDVIColorMap: { value: ndviMap },
         uHeatColorMap: { value: HeatMap },
         uChange: { value: false },
-        uTexture: { value: textureArray[i].texture },
+        //uTexture: { value: textureArray[i].texture }, currently not used, because the color information is passed to the shader via the current and past color array calculated in
+        //calculateColorArrays.js
+        //was left in the code in case it is needed in the future, shader code also just uncommented the texture use
       },
     })
     materialArray.push(material)
