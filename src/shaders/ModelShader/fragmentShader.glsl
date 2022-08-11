@@ -18,17 +18,20 @@ varying float vPastColor;
 
         if(vCurrentColor < vPastColor)
         { float colorDiff = vPastColor - vCurrentColor;
-          gl_FragColor=vec4(colorDiff,0.0,0.0,1.0);
+          gl_FragColor=vec4(colorDiff,0.0,0.0,colorDiff);
+          return;
         }
 
         if(vCurrentColor > vPastColor )
         { float colorDiff = vCurrentColor - vPastColor;
-          gl_FragColor=vec4(0.0,colorDiff,0.0,1.0);       
+          gl_FragColor=vec4(0.0,colorDiff,0.0,colorDiff);
+          return;      
         }
 
         if(vCurrentColor== vPastColor)
         {     
-          gl_FragColor=vec4(1.0,1.0,1.0,0.2);      
+          gl_FragColor=vec4(1.0,1.0,1.0,0.2); 
+          return;    
         }
       }
 
@@ -38,6 +41,7 @@ varying float vPastColor;
         //would need to pass textureNDVI.r instead of vColorPassed in the next line
           float u = (vCurrentColor * (600.0 - 1.0) + 0.5) / 600.0;
           gl_FragColor = texture2D(uNDVIColorMap, vec2(u, 0.5));
+          return;
         }
 
       if(uHeatColorPalette)
@@ -46,6 +50,7 @@ varying float vPastColor;
         //would need to pass textureHeat.r instead of vColorPassed in the next line        
           float u = (vCurrentColor  * (600.0 - 1.0) + 0.5) / 600.0;
           gl_FragColor = texture2D(uHeatColorMap, vec2(u, 0.5));
+          return;
         }
 
       if(uNdviColorPalette == false && uHeatColorPalette == false && uChange == false) 
@@ -54,6 +59,7 @@ varying float vPastColor;
           //textureC.a=1.0;
           //gl_FragColor=textureC; alternate calculation using the texture
           gl_FragColor=vec4( vCurrentColor , vCurrentColor , vCurrentColor ,1.0);
+          return;
         }
 
     }

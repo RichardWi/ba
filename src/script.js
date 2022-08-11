@@ -26,7 +26,8 @@ var orbitcontrols,
   BufferAttributeColorArray
 
 var Schlag = new THREE.Object3D()
-
+var PerfomanceTime0
+var PerfomanceTime1
 //add Stats to the page
 // 0: fps, 1: ms, 2: mb
 const stats = new Stats()
@@ -46,7 +47,7 @@ var params = {
 if (window.confirm('Modell und Texturen vom Server laden?')) {
   fetchModels = true
 }
-
+PerfomanceTime0 = performance.now()
 //Setup Three JS
 
 //Setup Canvas
@@ -103,6 +104,7 @@ function callColorCalculator() {
       let calculatedColor = new THREE.BufferAttribute(Uint8ArrayColor, 1)
       BufferAttributeColorArray.push(calculatedColor)
     }
+
     //new BufferAttribute with the calculated Color
     //currentColor is the color of the current displayed texture
     //pastColor is the color of the previous texture in the array
@@ -185,6 +187,9 @@ function addGui() {
       Object.assign(scene.children[1].children[0].geometry.attributes, currentColor)
       Object.assign(scene.children[1].children[0].geometry.attributes, pastColor)
     })
+
+  PerfomanceTime1 = performance.now()
+  console.log('Performance: ' + (PerfomanceTime1 - PerfomanceTime0) + ' ms')
 }
 
 //Add File Input for Textures, takes multiple files
@@ -209,7 +214,7 @@ inputTextures.addEventListener(
     let res = await Promise.all(files)
     textureArray = []
     imageArray = []
-    console.log(res.length)
+    console.log(res)
     for (let i = 0; i < res.length; i++) {
       //texture array
       let texture = new THREE.TextureLoader().load(res[i])
@@ -248,6 +253,8 @@ inputModel.addEventListener(
 
       scene.add(gltf.scene.clone())
       scene.add(bbox)
+      //new model
+      console.log(gltf.scene)
       inputTextures.disabled = false
       //is run so u can see the model in the right view even before uploading the textures
       camera.position.copy(cameraUtil.getCameraPosition(scene))
@@ -354,6 +361,7 @@ window.addEventListener('mouseup', (e) => {
             }
             count += 3
           }
+
           let average = calo.reduce((a, b) => a + b, 0) / calo.length
           console.log(calo)
           console.log(average)
@@ -423,12 +431,15 @@ window.addEventListener('mouseup', (e) => {
     cylinder.position.set(is2.x, is2.y, is2.z)
     const cylinder3 = cylinder.clone()
     cylinder3.position.set(is1.x, is2.y, is2.z)
-    scene.add(cylinder3)
+    const cylinder4 = cylinder.clone()
+    cylinder4.position.set(is2.x, is1.y, is1.z)
+    scene.add(cylinder3, cylinder4)
     const pgeometry = new THREE.PlaneGeometry(Math.abs(is1.x - is2.x), Math.abs(is1.y - is2.y))
     const pmaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
     var plane = new THREE.Mesh(pgeometry, pmaterial)
     scene.add(plane)
     plane.position.set(Math.abs(is1.x + is2.x) / 2, Math.abs(is1.y + is2.y) / 2, Math.abs(is1.z + is2.z) / 2 + 3)
+    window.removeEventListener('mouseup', e)
   }
 })
 
