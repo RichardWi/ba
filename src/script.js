@@ -14,6 +14,8 @@ import * as content from './utils/content.js'
 import * as shaderUtil from './utils/shader.js'
 import * as getColor from './utils/colorPicker'
 import * as calc from './utils/calculateColorArrays.js'
+//import { VRButton } from 'three/examples/jsm/webxr/VRButton.js' //VR SUPPORT
+//VR is commented out, Implementation is at the bottom of the file above the runtime function
 
 //variables
 var orbitcontrols,
@@ -267,6 +269,9 @@ inputModel.addEventListener(
 
 // FIRST ITERATION OF A FUNCTION TO CALCULATE THE COLOR OF 2 POINTS CHOSEN BY THE USER
 // NOT FINISHED
+// NEEDS TO BE REFACTORED AND FIXED
+// FUNCTION BREAKS AFTER ONE USE
+// FUNCTION BREAKS WHEN CLICKING OUTSITE THE MODEL
 const raycaster = new THREE.Raycaster()
 const mouseP = new THREE.Vector2()
 var firstclick = true
@@ -278,7 +283,6 @@ var timeout
 var pointofint2
 var pointofint1
 var uvIntersect = new THREE.Vector2()
-//window.addEventListener('mouseup', (e) => {})
 
 window.addEventListener('mouseup', (e) => {
   if (params.pickColor === false) {
@@ -438,10 +442,27 @@ window.addEventListener('mouseup', (e) => {
     const pmaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
     var plane = new THREE.Mesh(pgeometry, pmaterial)
     scene.add(plane)
-    plane.position.set(Math.abs(is1.x + is2.x) / 2, Math.abs(is1.y + is2.y) / 2, Math.abs(is1.z + is2.z) / 2 + 3)
-    window.removeEventListener('mouseup', e)
+    plane.position.set((is1.x + is2.x) / 2, (is1.y + is2.y) / 2, (is1.z + is2.z) / 2 + 3)
   }
 })
+
+//VR SUPPORT
+/*
+//add VR button
+document.body.appendChild(VRButton.createButton(renderer))
+//enable VR in the renderer
+renderer.xr.enabled = true
+//camera has to be in a group (dolly), because it cant be moved directly in VR, to move the camera, move the group
+const dolly = new THREE.Group()
+dolly.add(camera)
+scene.add(dolly)
+//in order to calc dolly position, model has to be loaded
+dolly.position.copy(cameraUtil.getCameraPosition(scene))
+//to enable picking see:
+https://r105.threejsfundamentals.org/threejs/lessons/threejs-webvr-point-to-select.html
+//to enable movement see:
+https://www.youtube.com/watch?v=mpVG2Iitkqg
+*/
 
 // runtime Function getting called each frame
 const runtime = () => {
