@@ -14,7 +14,7 @@ npm run dev
 
 # Build for production in the dist/ directory
 npm run build
-```
+
 
 Prototype uses the following file formats:
 
@@ -50,3 +50,5 @@ Colormaps:
 
 if the Texture uses a different size than 600px - change the number in the part of the FragmentShader that calculates the pixel color with the texture changed to the width of the new texture
 alternative: add a uniform for the width of the texture to the shader and pass the texture width with the uniform
+
+```
